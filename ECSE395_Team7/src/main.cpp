@@ -348,9 +348,30 @@ void setup() {
 
 
 void loop() {
+    //ecs181: Gyro Update
+    if (gyro_signals()) {
+        RateRoll-=RateCalibrationRoll;
+        RatePitch-=RateCalibrationPitch;
+        RateYaw-=RateCalibrationYaw;
+        kalman_1d(KalmanAngleRoll, KalmanUncertaintyAngleRoll, RateRoll, AngleRoll);
+        KalmanAngleRoll=Kalman1DOutput[0]; 
+        KalmanUncertaintyAngleRoll=Kalman1DOutput[1];
+        kalman_1d(KalmanAnglePitch, KalmanUncertaintyAnglePitch, RatePitch, AnglePitch);
+        KalmanAnglePitch=Kalman1DOutput[0]; 
+        KalmanUncertaintyAnglePitch=Kalman1DOutput[1];
 
+        if (++PrintCounter >= PRINT_EVERY) {
+        PrintCounter = 0;
+        Serial.print("Roll Angle [°] ");
+        Serial.print(KalmanAngleRoll);
+        Serial.print(" Pitch Angle [°] ");
+        Serial.println(KalmanAnglePitch);
+        }
+    }
+    
     unsigned long currentTime = millis();
-    int sensorAngle = getSensorAngle();
+    //ecs181: depending on application change to pitch maybe
+    int sensorAngle = KalmanAngleRoll;
 
     bool pressed = buttonPressed();
 
