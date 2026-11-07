@@ -49,6 +49,20 @@ const unsigned long debounceTime = 50;
 // gbg29: Minimum angle change to count as movement
 const int movementThreshold = 2;
 
+//ecs181: Kallmam filter code variables
+
+float RateRoll, RatePitch, RateYaw;
+float RateCalibrationRoll, RateCalibrationPitch, RateCalibrationYaw;
+int RateCalibrationNumber;
+float AccX, AccY, AccZ;
+float AngleRoll, AnglePitch;
+uint32_t LoopTimer;
+uint8_t PrintCounter = 0;
+uint32_t LastErrorPrint = 0;
+float KalmanAngleRoll=0, KalmanUncertaintyAngleRoll=2*2;
+float KalmanAnglePitch=0, KalmanUncertaintyAnglePitch=2*2;
+float Kalman1DOutput[]={0,0};
+
 // gbg29: Define system operating states
 enum SystemState {
     IDLE,
@@ -179,19 +193,7 @@ void flushToilet() {
     currentState = IDLE;
 }
 
-//ecs181: Kallmam filter code variables
 
-float RateRoll, RatePitch, RateYaw;
-float RateCalibrationRoll, RateCalibrationPitch, RateCalibrationYaw;
-int RateCalibrationNumber;
-float AccX, AccY, AccZ;
-float AngleRoll, AnglePitch;
-uint32_t LoopTimer;
-uint8_t PrintCounter = 0;
-uint32_t LastErrorPrint = 0;
-float KalmanAngleRoll=0, KalmanUncertaintyAngleRoll=2*2;
-float KalmanAnglePitch=0, KalmanUncertaintyAnglePitch=2*2;
-float Kalman1DOutput[]={0,0};
 
 void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement) {
   KalmanState=KalmanState+0.004f*KalmanInput;
