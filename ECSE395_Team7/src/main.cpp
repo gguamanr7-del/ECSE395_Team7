@@ -125,7 +125,7 @@ void startClosing() {
 
     Serial.println("Closing lid...");
 
-    previousAngle = getSensorAngle();
+    previousAngle = KalmanAngleRoll;
 
     lastMovementTime = millis();
     motorStartTime = millis();
@@ -166,7 +166,7 @@ void flushToilet() {
 
     motorOff();
 
-    if (getSensorAngle() <= closedAngle) {
+    if (KalmanAngleRoll <= closedAngle) {
 
         Serial.println("Lid confirmed closed.");
         Serial.println("FLUSH COMMAND (not implemented)");
@@ -222,7 +222,7 @@ void i2c_restart(void) {
 
 // ecs 181: endTransmission() codes: 0 ok, 1 too long, 2 NACK on address, 3 NACK on data, 4 other, 5 timeout
 bool writeReg(uint8_t reg, uint8_t val) {
-  Wire.beginTransmission(MPU_ADDR);
+  Wire.beginTransmission(0x68);
   Wire.write(reg);
   Wire.write(val);
   uint8_t err = Wire.endTransmission();
@@ -235,7 +235,7 @@ bool writeReg(uint8_t reg, uint8_t val) {
 
 // ecs181: Reads len bytes starting at reg, using a repeated start between the register-select write and the read (standard MPU6050 access pattern)
 bool readRegs(uint8_t reg, uint8_t *buf, uint8_t len) {
-  Wire.beginTransmission(MPU_ADDR);
+  Wire.beginTransmission(0x68);
   Wire.write(reg);
   uint8_t err = Wire.endTransmission(false);
   if (err) {
@@ -245,7 +245,7 @@ bool readRegs(uint8_t reg, uint8_t *buf, uint8_t len) {
     }
     return false;
   }
-  uint8_t got = Wire.requestFrom((uint8_t)MPU_ADDR, (uint8_t)len);
+  uint8_t got = Wire.requestFrom((uint8_t)0x68, (uint8_t)len);
   if (got != len) {
     if (millis() - LastErrorPrint > 500) {
       Serial.printf("readRegs(0x%02X): wanted %u bytes, got %u\n", reg, len, got);
