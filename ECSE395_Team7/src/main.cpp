@@ -30,11 +30,11 @@ const int motorPin1 = A1;
 const int motorPin2 = A2;
 
 //ecs181: Define pins for gyro
-const int SDA_PIN = 21;
-const int SCL_PIN = 22;
+const int SDA_PIN = 22;
+const int SCL_PIN = 20;
 #define MPU_ADDR 0x68;
-const int USE_DEFAULT_PINS = 1; //ecs181 181 = use the board's default I2C pins (Wire.begin()), 0 = use SDA_PIN/SCL_PIN above
-const int I2C_CLOCK = 400000;   //ecs181 try 100000 if you still see errors
+const int USE_DEFAULT_PINS = 0; //ecs181 181 = use the board's default I2C pins (Wire.begin()), 0 = use SDA_PIN/SCL_PIN above
+const int I2C_CLOCK = 100000;   //ecs181 try 100000 if you still see errors
 const int PRINT_EVERY = 1000;
 
 // gbg29: Lid considered closed at 5 degrees or less
@@ -43,7 +43,7 @@ const int closedAngle = 5;
 // gbg29: Motor timing (adjust after testing)
 const unsigned long maxExtendTime = 10000;
 const unsigned long retractTime = 3000;
-const unsigned long noMovementTimeout = 1000;
+const unsigned long noMovementTimeout = 10000;
 const unsigned long debounceTime = 50;
 
 // gbg29: Minimum angle change to count as movement
