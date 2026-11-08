@@ -26,8 +26,9 @@
 const int buttonPin = 38;  // Built-in SW38 button
 
 // gbg29: Define TT motor outputs
-const int motorPin1 = A1;
-const int motorPin2 = A2;
+const int motorPin1 = A0;
+const int motorPin2 = A1;
+
 
 //ecs181: Define pins for gyro
 const int SDA_PIN = 22;
@@ -43,7 +44,8 @@ const int closedAngle = 5;
 // gbg29: Motor timing (adjust after testing)
 const unsigned long maxExtendTime = 10000;
 const unsigned long retractTime = 3000;
-const unsigned long noMovementTimeout = 10000;
+const unsigned long noMovementTimeout = 2000;
+const unsigned long closingBuffer = 2000;
 const unsigned long debounceTime = 50;
 
 // gbg29: Minimum angle change to count as movement
@@ -71,12 +73,14 @@ enum SystemState {
     READY_TO_FLUSH,
     ERROR_STATE
 };
+String statearr[5] = {"IDLE", "CLOSING", "RETRACTING", "READY_TO_FLUSH", "ERROR_STATE"};
 
 SystemState currentState = IDLE;
 
 // gbg29: Track timing and movement
 unsigned long motorStartTime = 0;
 unsigned long lastMovementTime = 0;
+unsigned long closingStartTime = 0;
 
 int previousAngle = 0;
 
@@ -338,6 +342,8 @@ void setup() {
 
     pinMode(motorPin1, OUTPUT);
     pinMode(motorPin2, OUTPUT);
+    digitalWrite(motorPin1, LOW);
+    digitalWrite(motorPin2, LOW);
 
     motorOff();
 
@@ -398,10 +404,12 @@ void loop() {
         case IDLE:
 
             // gbg29: Wait for button press
+            motorOff();
             break;
 
         case CLOSING: {
 
+            closingStartTime = currentTime;
             // gbg29: Stop extending once lid closes
             if (sensorAngle <= closedAngle) {
 
@@ -421,14 +429,16 @@ void loop() {
             }
 
             // gbg29: Detect possible obstruction
-            if (currentTime - lastMovementTime
-                >= noMovementTimeout) {
+            
+                if (currentTime - lastMovementTime
+                    >= noMovementTimeout) {
+                    //if((currentTime - closingStartTime) > closingBuffer){
+                        stopWithError(
+                            "No lid movement detected. Possible obstruction."
+                    );
 
-                stopWithError(
-                    "No lid movement detected. Possible obstruction."
-                );
-
-                break;
+                    break;
+                //}
             }
 
             // gbg29: Prevent motor running too long
@@ -495,7 +505,7 @@ void loop() {
         Serial.print(sensorAngle);
 
         Serial.print(" | State: ");
-        Serial.println(currentState);
+        Serial.println(statearr[currentState]);
 
         lastPrintTime = currentTime;
     }
