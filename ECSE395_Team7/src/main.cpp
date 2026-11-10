@@ -24,6 +24,7 @@
 // gbg29: Define inputs
 //const int potentiometerPin = A0;
 const int buttonPin = 38;  // Built-in SW38 button
+const int LED_PIN = 0; //Build-in LED pin
 
 // gbg29: Define TT motor outputs
 const int motorPin1 = A0;
@@ -44,7 +45,7 @@ const int closedAngle = 5;
 // gbg29: Motor timing (adjust after testing)
 const unsigned long maxExtendTime = 10000;
 const unsigned long retractTime = 3000;
-const unsigned long noMovementTimeout = 2000;
+const unsigned long noMovementTimeout = 750;
 const unsigned long closingBuffer = 2000;
 const unsigned long debounceTime = 50;
 
@@ -81,6 +82,7 @@ SystemState currentState = IDLE;
 unsigned long motorStartTime = 0;
 unsigned long lastMovementTime = 0;
 unsigned long closingStartTime = 0;
+unsigned long flushStartTime = 0;
 
 int previousAngle = 0;
 
@@ -187,7 +189,10 @@ void flushToilet() {
     if (KalmanAngleRoll <= closedAngle) {
 
         Serial.println("Lid confirmed closed.");
-        Serial.println("FLUSH COMMAND (not implemented)");
+        Serial.println("FLUSH COMMAND (LED)");
+        digitalWrite(LED_PIN, HIGH);
+        
+
 
     } else {
 
@@ -480,15 +485,25 @@ void loop() {
         case READY_TO_FLUSH:
 
             flushToilet();
+            flushStartTime = currentTime;
+            if ((currentTime - flushStartTime) > 5000){
+                Serial.println("FLUSH SUCCESSFUL");
+                digitalWrite(LED_PIN, LOW);
+                currentState = IDLE;
+            }
+
             break;
 
         case ERROR_STATE:
 
             // gbg29: Motor remains stopped after error
+            
+            
             if (pressed) {
 
                 Serial.println("Error acknowledged.");
                 Serial.println("Check and reset mechanism.");
+
 
                 currentState = IDLE;
             }
