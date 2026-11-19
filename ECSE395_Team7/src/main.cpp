@@ -24,7 +24,7 @@
 // gbg29: Define inputs
 //const int potentiometerPin = A0;
 const int buttonPin = 38;  // Built-in SW38 button
-const int LED_PIN = 0; //Build-in LED pin
+const int LED_PIN = 13; //Build-in LED pin
 
 // gbg29: Define TT motor outputs
 const int motorPin1 = A0;
@@ -41,10 +41,11 @@ const int PRINT_EVERY = 1000;
 
 // gbg29: Lid considered closed at 5 degrees or less
 const int closedAngle = 5;
+const int tippingAngle = 45;
 
 // gbg29: Motor timing (adjust after testing)
 const unsigned long maxExtendTime = 10000;
-const unsigned long retractTime = 3000;
+const unsigned long retractTime = 5000;
 const unsigned long noMovementTimeout = 750;
 const unsigned long closingBuffer = 2000;
 const unsigned long debounceTime = 50;
@@ -84,7 +85,7 @@ unsigned long motorStartTime = 0;
 unsigned long lastMovementTime = 0;
 unsigned long closingStartTime = 0;
 unsigned long flushStartTime = 0;
-const unsigned long flushDuration = 0;
+const unsigned long flushDuration = 3000;
 
 int previousAngle = 0;
 
@@ -184,14 +185,14 @@ void stopWithError(const char* message) {
 }
 
 // gbg29: Placeholder for future flushing mechanism
-void startFlush() {
+void startFlush(long currentTime) {
     motorOff();
 
     if (KalmanAngleRoll <= closedAngle) {
         Serial.println("Lid confirmed closed.");
         Serial.println("FLUSH COMMAND (LED)");
         digitalWrite(LED_PIN, HIGH);
-        flushStartTime = millis();   // record the start time once
+        flushStartTime = currentTime;   // record the start time once
         currentState = FLUSHING;
     } else {
         Serial.println("Flush blocked: lid is open.");
@@ -416,7 +417,7 @@ void loop() {
 
             closingStartTime = currentTime;
             // gbg29: Stop extending once lid closes
-            if (sensorAngle <= closedAngle) {
+            if (sensorAngle <= tippingAngle) {
 
                 Serial.println("Lid successfully closed!");
 
@@ -471,8 +472,12 @@ void loop() {
                 Serial.println("Retraction complete (timed).");
 
                 if (closingSuccessful) {
-
-                    currentState = READY_TO_FLUSH;
+                    if(sensorAngle <= closedAngle){
+                        currentState = READY_TO_FLUSH;
+                    }
+                    else if(sensorAngle >= closedAngle){
+                        stopWithError("Lid not fully closed, possible obstruction");
+                    }
 
                 } else {
 
@@ -484,7 +489,7 @@ void loop() {
 
         case READY_TO_FLUSH:
 
-            startFlush();
+            startFlush(currentTime);
             break;
         case FLUSHING:
             if (currentTime - flushStartTime >= flushDuration) {
