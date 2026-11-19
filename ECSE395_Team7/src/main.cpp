@@ -72,9 +72,10 @@ enum SystemState {
     CLOSING,
     RETRACTING,
     READY_TO_FLUSH,
+    FLUSHING,
     ERROR_STATE
 };
-String statearr[5] = {"IDLE", "CLOSING", "RETRACTING", "READY_TO_FLUSH", "ERROR_STATE"};
+String statearr[6] = {"IDLE", "CLOSING", "RETRACTING", "READY_TO_FLUSH", "FLUSHING", "ERROR_STATE"};
 
 SystemState currentState = IDLE;
 
@@ -83,6 +84,7 @@ unsigned long motorStartTime = 0;
 unsigned long lastMovementTime = 0;
 unsigned long closingStartTime = 0;
 unsigned long flushStartTime = 0;
+const unsigned long flushDuration = 0;
 
 int previousAngle = 0;
 
@@ -182,24 +184,19 @@ void stopWithError(const char* message) {
 }
 
 // gbg29: Placeholder for future flushing mechanism
-void flushToilet() {
-
+void startFlush() {
     motorOff();
 
     if (KalmanAngleRoll <= closedAngle) {
-
         Serial.println("Lid confirmed closed.");
         Serial.println("FLUSH COMMAND (LED)");
         digitalWrite(LED_PIN, HIGH);
-        
-
-
+        flushStartTime = millis();   // record the start time once
+        currentState = FLUSHING;
     } else {
-
         Serial.println("Flush blocked: lid is open.");
+        currentState = IDLE;
     }
-
-    currentState = IDLE;
 }
 
 
@@ -345,6 +342,9 @@ void setup() {
     // gbg29: Built-in SW38 button has pull-up resistor
     pinMode(buttonPin, INPUT);
 
+    pinMode(LED_PIN, OUTPUT);
+    digitalWrite(LED_PIN, LOW);
+
     pinMode(motorPin1, OUTPUT);
     pinMode(motorPin2, OUTPUT);
     digitalWrite(motorPin1, LOW);
@@ -484,14 +484,14 @@ void loop() {
 
         case READY_TO_FLUSH:
 
-            flushToilet();
-            flushStartTime = currentTime;
-            if ((currentTime - flushStartTime) > 5000){
-                Serial.println("FLUSH SUCCESSFUL");
+            startFlush();
+            break;
+        case FLUSHING:
+            if (currentTime - flushStartTime >= flushDuration) {
                 digitalWrite(LED_PIN, LOW);
+                Serial.println("FLUSH SUCCESSFUL");
                 currentState = IDLE;
             }
-
             break;
 
         case ERROR_STATE:
